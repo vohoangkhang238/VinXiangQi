@@ -514,7 +514,23 @@ namespace VinXiangQi
                 float offsetY = centerY - board.Y;
                 int xPos = (int)Math.Round(offsetX / gridWidth);
                 int yPos = (int)Math.Round(offsetY / gridHeight);
+                // === SỬA LOGIC CỜ ÚP TẠI ĐÂY ===
                 if (xPos >= 0 && xPos <= 8 && yPos >= 0 && yPos <= 9)
+                {
+                    string labelName = prediction.Label.Name;
+                    
+                    // Chuẩn hóa tên quân úp về "unknown" để khớp với code tạo FEN
+                    // (Phòng trường hợp bạn train model đặt tên là "facedown", "up", hay "hidden"...)
+                    if (labelName == "facedown" || labelName == "up" || labelName == "hidden" || labelName == "unknown")
+                    {
+                        tmpBoard[xPos, yPos] = "unknown";
+                    }
+                    else
+                    {
+                        tmpBoard[xPos, yPos] = labelName;
+                    }
+                }
+                // ==============================
                 {
                     tmpBoard[xPos, yPos] = prediction.Label.Name;
                 }

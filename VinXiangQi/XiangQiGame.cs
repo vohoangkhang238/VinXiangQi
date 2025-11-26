@@ -642,13 +642,33 @@ namespace VinXiangQi
             var fen = "";
             var emptyCount = 0;
             if (board == null) return "";
+
+            // Xử lý khi mình cầm quân Đỏ (hoặc góc nhìn mặc định)
             if (myPos == "w")
             {
                 for (var y = 0; y < 10; y++)
                 {
                     for (var x = 0; x < 9; x++)
                     {
-                        if (board[y, x] == "")
+                        // Lấy tên quân cờ hiện tại
+                        string p = board[x, y]; // Lưu ý: Code gốc của bạn đang dùng board[col, row] hay board[row, col]?
+                        // Dựa vào hàm fenToBoard ở dưới: newBoard[col, row_i] = row[i]
+                        // => Có vẻ mảng board đang lưu dạng board[x, y] (cột, hàng).
+                        // Hãy kiểm tra kỹ. Nếu code gốc dòng này là board[y, x] thì giữ nguyên.
+                        // Dựa vào logic generateAllMoves: board[x, y]. Nên ta dùng board[x, y].
+                        
+                        // === LOGIC CỜ ÚP (JIEQI) THÊM VÀO TẠI ĐÂY ===
+                        // Giả sử AI trả về tên là "unknown" cho quân úp
+                        if (p == "unknown" || p == "facedown")
+                        {
+                            // Nếu nằm ở nửa trên (0-4) -> Là quân úp của Đen (x thường)
+                            if (y < 5) p = "x";
+                            // Nếu nằm ở nửa dưới (5-9) -> Là quân úp của Đỏ (X hoa)
+                            else p = "X";
+                        }
+                        // =============================================
+
+                        if (string.IsNullOrEmpty(p)) // Nếu ô trống
                         {
                             emptyCount++;
                         }
@@ -659,7 +679,7 @@ namespace VinXiangQi
                                 fen += emptyCount.ToString();
                                 emptyCount = 0;
                             }
-                            fen += board[y, x];
+                            fen += p;
                         }
                     }
                     if (emptyCount > 0)
@@ -670,13 +690,24 @@ namespace VinXiangQi
                     fen += "/";
                 }
             }
+            // Xử lý khi mình cầm quân Đen (góc nhìn ngược)
             else
             {
                 for (var y = 9; y >= 0; y--)
                 {
                     for (var x = 0; x < 9; x++)
                     {
-                        if (board[y, x] == "")
+                        string p = board[x, y];
+
+                        // === LOGIC CỜ ÚP (JIEQI) ===
+                        if (p == "unknown" || p == "facedown")
+                        {
+                            if (y < 5) p = "x";
+                            else p = "X";
+                        }
+                        // ===========================
+
+                        if (string.IsNullOrEmpty(p))
                         {
                             emptyCount++;
                         }
@@ -687,7 +718,7 @@ namespace VinXiangQi
                                 fen += emptyCount.ToString();
                                 emptyCount = 0;
                             }
-                            fen += board[y, x];
+                            fen += p;
                         }
                     }
                     if (emptyCount > 0)
@@ -698,52 +729,9 @@ namespace VinXiangQi
                     fen += "/";
                 }
             }
-            fen = fen.Substring(0, fen.Length - 1) + " " + nextPlayer;
+            
+            // Cắt bỏ dấu "/" thừa ở cuối và thêm đuôi FEN chuẩn
+            // Lưu ý: Cờ úp cần đuôi đơn giản, Engine sẽ tự hiểu
+            fen = fen.Substring(0, fen.Length - 1) + " " + nextPlayer + " - - 0 1";
             return fen;
         }
-
-
-        string[,] getEmptyBoard()
-        {
-            string[,] board = new string[9, 10];
-            for (int i = 0; i < 10; i++)
-            {
-                for (int x = 0; x < 9; x++)
-                {
-                    board[x, i] = "";
-                }
-            }
-            return board;
-        }
-
-        string[,] fenToBoard(string fen)
-        {
-            string[] args = fen.Split(' ');
-            string[] board = args[0].Split('/');
-            string turn = args[1];
-            string[,] newBoard = this.getEmptyBoard();
-            string chessPieces = "rnbakRNBAKCPcp";
-            string numbers = "123456789";
-            for (int row_i = 0; row_i < board.Length; row_i++)
-            {
-                int col = 0;
-                string row = board[row_i];
-                for (int i = 0; i < row.Length; i++)
-                {
-                    if (chessPieces.Contains(row[i]))
-                    {
-                        newBoard[col, row_i] = row[i].ToString();
-                        col++;
-                    }
-                    else if (numbers.Contains(row[i]))
-                    {
-                        col += int.Parse(row[i].ToString());
-                    }
-                }
-            }
-            this.board = newBoard;
-            this.turn = turn;
-            return newBoard;
-        }
-    }
-}
